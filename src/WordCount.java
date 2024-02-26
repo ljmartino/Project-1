@@ -13,7 +13,6 @@ public class WordCount
 	 * @postcondition wordCount represents total number of words separated by space
 	 */
 
-	//Initially static
 	public static int wordCount(String path) throws FileNotFoundException
 	{
 		// File object
@@ -24,7 +23,7 @@ public class WordCount
 			throw new FileNotFoundException();
 		
 		Scanner reader = new Scanner(file);
-		
+
 	    int wordCount = 0;
 		
 	    // 1. read file line by line, count # of words, accumulate result

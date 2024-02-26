@@ -1,4 +1,5 @@
 import java.net.*;
+import java.util.Scanner;
 import java.io.*;
 
 public class Client {
@@ -28,18 +29,26 @@ public class Client {
                 new BufferedReader(new InputStreamReader(System.in));
             String fromServer;
             String fromUser;
- 
+            
+            //Server has to communicate first or else loop won't run
             while ((fromServer = in.readLine()) != null) {
                 System.out.println("Server: " + fromServer);
                  
                 fromUser = stdIn.readLine();
                 if(fromUser.equals("end")) break;
-                if (fromUser != null) {
-                    System.out.println("Client: " + fromUser);
-                    out.println(fromUser);
+                else if (fromUser.equals("run")) {
+                    int response = wordCount(fromServer);
+                    System.out.println("Client: " + response);
+                    out.println(response);
+                } else{
+                    System.out.println("Invalid input, try again");
+                    out.println("Invalid input, try again");
                 }
                 System.out.println();
             }
+
+
+
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + hostName);
             System.exit(1);
@@ -49,4 +58,26 @@ public class Client {
             System.exit(1);
         }
     }
+
+    public static int wordCount(String path) throws FileNotFoundException
+	{
+		// File object
+		File file = new File(path);
+		
+		// file existence check
+		if(!file.exists())  
+			throw new FileNotFoundException();
+		
+		Scanner reader = new Scanner(file);
+		
+	    int wordCount = 0;
+		
+	    // 1. read file line by line, count # of words, accumulate result
+	    // 2. this approach is faster for large file, limits stack overflow error
+		while(reader.hasNext())
+			wordCount += reader.nextLine().trim().split("\\s+").length;
+		
+	    reader.close();
+	    return wordCount;
+	}
 }
