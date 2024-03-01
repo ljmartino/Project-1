@@ -43,88 +43,6 @@ public class WordCount
 	    return wordCount;
 	}
 
-	public static int wordCount2(String path, int start, int end) throws IOException {
-		// File object
-		File file = new File(path);
-		
-		// file existence check
-		if(!file.exists())  
-			throw new FileNotFoundException();
-		
-		Scanner reader = new Scanner(file);
-
-	    int wordCount = 0;
-    	int noOfLines = start;
-		boolean newLine = true;
-
-    	try (FileChannel channel = FileChannel.open(Paths.get(path), StandardOpenOption.READ)) {
-    	    ByteBuffer byteBuffer = channel.map(MapMode.READ_ONLY, 0, channel.size());
-     	   	while(byteBuffer.hasRemaining() && reader.hasNext()) {
-				if(noOfLines>=start && noOfLines<=end && newLine){
-					wordCount += reader.nextLine().trim().split("\\s+").length;
-					noOfLines++;
-				}
-				else{
-     	       		byte currentByte = byteBuffer.get();
-    	    		if (currentByte == '\n'){
-     	           		noOfLines++;
-						newLine = true;
-					} else{
-						newLine = false;
-					}
-				}
-     	  	}
-    	}
-		return wordCount;
-	}
-
-	public static long numBits(String path) throws IOException {
-		// File object
-		File file = new File(path);
-		
-		// file existence check
-		if(!file.exists())  
-			throw new FileNotFoundException();
-
-		return file.length();
-	}
-
-	public static int wordCount3(String path, long start, long end) throws IOException {
-		// File object
-		File file = new File(path);
-		
-		// file existence check
-		if(!file.exists())  
-			throw new FileNotFoundException();
-		
-		Scanner reader = new Scanner(file);
-
-	    int wordCount = 0;
-    	long noOfBytes = (byte)start;
-		boolean newLine = true;
-
-    	try (FileChannel channel = FileChannel.open(Paths.get(path), StandardOpenOption.READ)) {
-    	    ByteBuffer byteBuffer = channel.map(MapMode.READ_ONLY, 0, channel.size());
-     	   	while(byteBuffer.hasRemaining() && reader.hasNext()) {
-				if(noOfBytes>=start && noOfBytes<=end && newLine){
-					int word = reader.nextLine().trim().split("\\s+").length;
-					wordCount += word;
-					noOfBytes+=(byte)word;
-				}
-				else{
-     	       		byte currentByte = byteBuffer.get();
-    	    		if (currentByte == '\n'){
-     	           		noOfBytes++;
-						newLine = true;
-					} else{
-						newLine = false;
-					}
-				}
-     	  	}
-    	}
-		return (int)noOfBytes;
-	}
-
 	public static int numberLines(String path) throws IOException {
     	int noOfLines = 1;
 
@@ -147,12 +65,17 @@ public class WordCount
 	{
 		try
 		{
+			long start = System.currentTimeMillis();
 			int numLines = numberLines("words.txt");
-			int beginning = wordCount("words.txt", 0, numLines/2);
-			int end = wordCount("words.txt", numLines/2+1, numLines);
+			int beginning = wordCount("words.txt", 1, numLines/3);
+			int middle = wordCount("words.txt", numLines/3+1, 2*numLines/3);
+			int end = wordCount("words.txt", 2*numLines/3+1, numLines);
+			long ending = System.currentTimeMillis();
 			System.out.println(beginning);
+			System.out.println(middle);
 			System.out.println(end);
-			System.out.println(beginning+end);
+			System.out.println(beginning+middle+end);
+			System.out.print((ending-start)+" milliseconds elapsed");
 		} 
 		catch (FileNotFoundException e)
 		{
