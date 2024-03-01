@@ -27,26 +27,15 @@ public class Client {
         
             BufferedReader stdIn =
                 new BufferedReader(new InputStreamReader(System.in));
-            String fromServer;
-            String fromUser;
             
-            //Server has to communicate first or else loop won't run
-            while ((fromServer = in.readLine()) != null) {
-                System.out.println("Server: " + fromServer);
-                 
-                fromUser = stdIn.readLine();
-                if(fromUser.equals("end")) break;
-                else if (fromUser.equals("run")) {
-                    int response = wordCount(fromServer);
-                    System.out.println("Client: " + response);
-                    out.println(response);
-                } else{
-                    System.out.println("Invalid input, try again");
-                    out.println("Invalid input, try again");
-                }
-                System.out.println();
-            }
-
+            String fromServer;
+            int count;
+            
+            fromServer = in.readLine();
+            count = wordCount(fromServer);
+            System.out.println(count);
+            out.println(count);
+            
 
 
         } catch (UnknownHostException e) {
@@ -69,6 +58,8 @@ public class Client {
 			throw new FileNotFoundException();
 		
 		Scanner reader = new Scanner(file);
+
+        file.length();
 		
 	    int wordCount = 0;
 		
@@ -77,6 +68,30 @@ public class Client {
 		while(reader.hasNext())
 			wordCount += reader.nextLine().trim().split("\\s+").length;
 		
+	    reader.close();
+	    return wordCount;
+	}
+
+    public static int wordCount(String path, int start, int end) throws FileNotFoundException
+	{
+		// File object
+		File file = new File(path);
+		
+		// file existence check
+		if(!file.exists())  
+			throw new FileNotFoundException();
+		
+		Scanner reader = new Scanner(file);
+
+	    int wordCount = 0;
+		
+	    // 1. read file line by line, count # of words, accumulate result
+	    // 2. this approach is faster for large file, limits stack overflow error
+		for(int i=1;i<=end;i++){
+			if(i>=start) wordCount += reader.nextLine().trim().split("\\s+").length;
+			else reader.nextLine().trim().split("\\s+");
+		}
+
 	    reader.close();
 	    return wordCount;
 	}

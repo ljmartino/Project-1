@@ -3,27 +3,39 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ClientHandler implements Runnable {
-    private Socket clientSocket;
+    private ArrayList<Socket> sockets;
 
-    public ClientHandler(Socket socket) {
-        this.clientSocket = socket;
+    public ClientHandler(ArrayList<Socket> sockets) {
+        this.sockets = sockets;
     }
 
     @Override
     public void run() {
         try (
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+                BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         ) {
-            String inputLine;
+            
+            System.out.println("Enter file name: ");
+            String fromServer = stdIn.readLine();
 
-            out.println("words.txt");
+            String input = "";
+            int totalWords = 0;
 
-            while ((inputLine = in.readLine()) != null) {
-                out.println("words.txt");
+            for(int i=0;i<sockets.size();i++){
+                PrintWriter out = new PrintWriter(sockets.get(i).getOutputStream(), true);
+                out.println(fromServer);
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(sockets.get(i).getInputStream()));
+
+                int words = Integer.parseInt(in.readLine());
+                totalWords+=words;
+                System.out.println("Client "+i+": "+words);
             }
+            System.out.println("Total words is: "+totalWords);
+
         } catch (IOException e) {
             System.out.println("Exception caught when handling client");
             System.out.println(e.getMessage());
