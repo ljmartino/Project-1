@@ -11,22 +11,15 @@ public class NewClient {
 
 		try 
 		{
-			Socket socket = new Socket(hostName, portNumber);
-			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-			BufferedReader in = new BufferedReader(
-					new InputStreamReader(socket.getInputStream()));
-
-			BufferedReader stdIn =
-					new BufferedReader(new InputStreamReader(System.in));
-
+			Socket mySocket = new Socket(hostName, portNumber);
+			ObjectInputStream objectInputStream = new ObjectInputStream(mySocket.getInputStream());
 
 			// Receive file chunks and process them
 			Object chunk;
 			int wordCount = 0;
 
 			while ((chunk = objectInputStream.readObject()) != null) {
-				if ("END_OF_CHUNK".equals(chunk)) {
+				if (chunk instanceof Boolean) {
 					// End of chunks, break the loop
 					break;
 				}
@@ -40,17 +33,19 @@ public class NewClient {
 					System.out.println("Word count of file chunk: " + wordCount);
 				}
 
-				//            String fromServer;
-				//            int count;
-
-				//            fromServer = in.readLine();
-				//            count = wordCount(fromServer);
-				System.out.println(wordCount);
-				out.println(wordCount);
+				if(mySocket.isClosed())
+					System.out.println("At client: Socket is closed");
+				else {
+					System.out.println("At client: Socket is open");
+				}
+				PrintWriter outWriter = new PrintWriter(mySocket.getOutputStream());
+				outWriter.write(wordCount);
+				outWriter.flush();
 			}
 
 		} catch (IOException e) {
 			System.err.println("Couldn't get I/O for the connection");
+			e.printStackTrace();
 			System.exit(1);
 		}
 	}

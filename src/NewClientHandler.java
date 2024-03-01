@@ -3,6 +3,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -20,6 +21,8 @@ public class NewClientHandler implements Runnable {
     private static ArrayList<Socket> sockets;
     private static String filename;
     private static int numClients;
+    private static long start;
+    private static long end;
 
     public NewClientHandler(ArrayList<Socket> clientSockets, String path) {
         sockets = clientSockets;
@@ -30,31 +33,35 @@ public class NewClientHandler implements Runnable {
     @Override
     public void run() {
         try (BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
-//            
-//            System.out.println("Enter file name: ");
-//            String fromServer = stdIn.readLine();
-
             waitForRunCommand(stdIn);
+            stdIn.close();
         	
         	int totalWords = 0;
             List<String> fileLines = calculateFileLines(filename);
 
+            PrintWriter[] outWriters = new PrintWriter[numClients];
+            ObjectInputStream[] inReaders = new ObjectInputStream[numClients];
+            
             for(int i=0;i<sockets.size();i++){
-                PrintWriter out = new PrintWriter(sockets.get(i).getOutputStream(), true);
-                
-                // **
-                
-                //out.println(filename);
+                outWriters[i] = new PrintWriter(sockets.get(i).getOutputStream(), true);
 
                 distributeChunks(fileLines);
                 
-                BufferedReader in = new BufferedReader(new InputStreamReader(sockets.get(i).getInputStream()));
+                end = System.currentTimeMillis();
+                System.out.println("Time Taken: " + (end - start) + " ms");
+                
+                inReaders[i] = new ObjectInputStream(sockets.get(i).getInputStream());
 
-                int words = Integer.parseInt(in.readLine());
-                totalWords+=words;
-                System.out.println("Client "+i+": "+words);
             }
-            System.out.println("Total words is: "+totalWords);
+            
+            for(int i=0;i<sockets.size();i++){
+                int words = inReaders[i].readInt();
+                System.out.println("WORDS PARSED");
+                totalWords+=words;
+                System.out.println("Client " + i + ": " + words);
+            }
+            
+            System.out.println("Total words is: " + totalWords);
 
         } catch (IOException e) {
             System.out.println("Exception caught when handling client");
@@ -79,6 +86,7 @@ public class NewClientHandler implements Runnable {
             String command = terminalInput.readLine();
             if ("run".equalsIgnoreCase(command)) {
                 System.out.println("Received 'run' command. Starting processing...");
+                start = System.currentTimeMillis();
                 break;
             } else {
                 System.out.println("Invalid command. Please enter 'run'.");
@@ -109,12 +117,10 @@ public class NewClientHandler implements Runnable {
 
 		        // Send the file to the client
 		        objectOutputStream.writeObject(tempFile.toFile());
+		        System.out.println("CHUNK SENT SUCCESSFULLY");
 		        
 		        // Signal end of chunk
 		        out.println("END_OF_CHUNK");
-
-//		        // Signal the end of the chunks
-//		        out.println("END_OF_CHUNK");
 
 		    } catch (IOException e) {
 		        System.out.println("Error sending/receiving chunks to/from the client");
