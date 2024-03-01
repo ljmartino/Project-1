@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,7 +92,6 @@ public class Server {
         }
     }
 
-
     private static int calculateChunkSize(int totalLines, int totalClients) {
         // Calculate the chunk size for each client
         return totalLines / totalClients;
@@ -102,32 +103,32 @@ public class Server {
         try {
             for (Socket clientSocket : clientSockets) {
                 try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream())) {
 
-                    // Check if the client sent the "run" command instead of a chunk
-                    String command = in.readLine();
-                    if ("run".equalsIgnoreCase(command)) {
-                        System.out.println("Received 'run' command from Client " + (clientSockets.indexOf(clientSocket) + 1));
-                        continue; // Skip to the next client
-                    }
-
-                    // Calculate the start and end indices for the current client's chunk
+                    // Send a chunk of lines as a file to the client
                     int startIndex = clientSockets.indexOf(clientSocket) * chunkSize;
                     int endIndex = Math.min((clientSockets.indexOf(clientSocket) + 1) * chunkSize, fileLines.size());
 
-                    // Send the current chunk to the client
-                    for (int i = startIndex; i < endIndex; i++) {
-                        out.println(fileLines.get(i));
+                    // Create a temporary file for the chunk
+                    Path tempFile = Files.createTempFile("chunk", ".txt");
+                    try (BufferedWriter writer = Files.newBufferedWriter(tempFile)) {
+                        for (int i = startIndex; i < endIndex; i++) {
+                            writer.write(fileLines.get(i));
+                            writer.newLine();
+                        }
                     }
+
+                    // Send the file to the client
+                    objectOutputStream.writeObject(tempFile.toFile());
 
                     // Signal the end of the chunks
                     out.println("END_OF_CHUNK");
 
-                    // Receive word count from the client
-                    String wordCountStr = in.readLine();
-                    int wordCount = Integer.parseInt(wordCountStr);
-                    System.out.println("Received word count from Client " + (clientSockets.indexOf(clientSocket) + 1) + ": " + wordCount);
-                    totalWordCount += wordCount;
+                    // Receive word count from the client (remove this line)
+                    // String wordCountStr = in.readLine();
+
+                    // The rest of the code remains the same...
+
                 } catch (IOException e) {
                     System.out.println("Error sending/receiving chunks to/from the client");
                     e.printStackTrace();
