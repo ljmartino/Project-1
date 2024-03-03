@@ -60,6 +60,7 @@ public class NewClientHandler implements Runnable {
         	{
         		outWriters[i] = new ObjectOutputStream(sockets.get(i).getOutputStream());
 				inReaders[i] = new BufferedReader(new InputStreamReader(sockets.get(i).getInputStream()));
+                System.out.println("READERS INITIALIZED");
         	}
         	
         	System.out.println("SOCKET STATUS AFTER R/W INITIALIZATION");
@@ -99,14 +100,13 @@ public class NewClientHandler implements Runnable {
     				System.out.println("At Server: Socket is closed");
                 else {
     				System.out.println("At Server: Socket is open");
-                    System.out.println("READERS INITIALIZED");
 				}            
             }
             
             System.out.println("ATTEMPTING TO READ WORDS");
             
             for(int i=0;i<sockets.size();i++){
-                int words = Integer.parseInt(inReaders[i].readLine());
+                int words = inReaders[i].read();
                 System.out.println("WORDS PARSED");
                 totalWords+=words;
                 System.out.println("Client " + i + ": " + words);
