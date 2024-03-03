@@ -1,0 +1,10 @@
+Hello from Lukas
+Emilio and 
+Klaus from
+CSC 340
+These are random words
+In a 
+Random Number of
+Lines
+Let's see if the 
+Program works properly
