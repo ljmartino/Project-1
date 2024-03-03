@@ -36,25 +36,77 @@ public class NewClientHandler implements Runnable {
             waitForRunCommand(stdIn);
             stdIn.close();
         	
-        	int totalWords = 0;
+            int totalWords = 0;
             List<String> fileLines = calculateFileLines(filename);
+            
+            System.out.println("SOCKET STATUS AFTER FILE LINES");
+        	for(int i = 0; i < sockets.size(); i++)
+        	{
+        		String isOpen = "";
+        		
+        		if(sockets.get(i).isClosed())
+        			isOpen = "CLOSED";
+        		else {
+					isOpen = "OPEN";
+				}
+        		System.out.println("SOCKET " + i + ": " + isOpen);
+        	}
 
-            ObjectInputStream[] inReaders = new ObjectInputStream[numClients];
+            
+        	ObjectOutputStream[] outWriters = new ObjectOutputStream[numClients];
+        	BufferedReader[] inReaders = new BufferedReader[numClients];
+        	
+        	for(int i = 0; i < sockets.size(); i++)
+        	{
+        		outWriters[i] = new ObjectOutputStream(sockets.get(i).getOutputStream());
+				inReaders[i] = new BufferedReader(new InputStreamReader(sockets.get(i).getInputStream()));
+        	}
+        	
+        	System.out.println("SOCKET STATUS AFTER R/W INITIALIZATION");
+        	for(int i = 0; i < sockets.size(); i++)
+        	{
+        		String isOpen = "";
+        		
+        		if(sockets.get(i).isClosed())
+        			isOpen = "CLOSED";
+        		else {
+					isOpen = "OPEN";
+				}
+        		System.out.println("SOCKET " + i + ": " + isOpen);
+        	}
+
             
             for(int i=0;i<sockets.size();i++){
-                distributeChunks(fileLines);
+                distributeChunks(fileLines, outWriters);
+                
+                System.out.println("SOCKET STATUS AFTER CHUNKS");
+            	for(int ii = 0; ii < sockets.size(); ii++)
+            	{
+            		String isOpen = "";
+            		
+            		if(sockets.get(ii).isClosed())
+            			isOpen = "CLOSED";
+            		else {
+    					isOpen = "OPEN";
+    				}
+            		System.out.println("SOCKET " + ii + ": " + isOpen);
+            	}
                 
                 end = System.currentTimeMillis();
                 System.out.println("Time Taken: " + (end - start) + " ms");
                 
-                inReaders[i] = new ObjectInputStream(sockets.get(i).getInputStream());
-                System.out.println("READERS INITIALIZED");
+                if(sockets.get(i).isClosed())
+    				System.out.println("At Server: Socket is closed");
+                else {
+    				System.out.println("At Server: Socket is open");
+                    System.out.println("READERS INITIALIZED");
+				}            
             }
             
             System.out.println("ATTEMPTING TO READ WORDS");
             
             for(int i=0;i<sockets.size();i++){
-                int words = inReaders[i].read();
+                int words = Integer.parseInt(inReaders[i].readLine());
                 System.out.println("WORDS PARSED");
                 totalWords+=words;
                 System.out.println("Client " + i + ": " + words);
@@ -76,6 +128,7 @@ public class NewClientHandler implements Runnable {
             while ((line = reader.readLine()) != null) {
                 lines.add(line);
             }
+            reader.close();
         }
         return lines;
     }
@@ -95,16 +148,17 @@ public class NewClientHandler implements Runnable {
         }
     }
     
-    private static void distributeChunks(List<String> fileLines) throws IOException {
+    private static void distributeChunks(List<String> fileLines, ObjectOutputStream[] outWriters) throws IOException {
         int chunkSize = fileLines.size() / numClients;
     	
     	for (Socket clientSocket : sockets) {
-		    try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream())) {
+		    try /*(ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream()))*/ {
 
 		        // Send a chunk of lines as a file to the client
 		        int startIndex = sockets.indexOf(clientSocket) * chunkSize;
 		        int endIndex = Math.min((sockets.indexOf(clientSocket) + 1) * chunkSize, fileLines.size());
-
+		        int writerIndex = sockets.indexOf(clientSocket);
+		        
 		        // Create a temporary file for the chunk
 		        Path tempFile = Files.createTempFile("chunk", ".txt");
 		        try (BufferedWriter writer = Files.newBufferedWriter(tempFile)) {
@@ -115,16 +169,19 @@ public class NewClientHandler implements Runnable {
 		        }
 
 		        // Send the file to the client
-		        objectOutputStream.writeObject(tempFile.toFile());
+		        outWriters[writerIndex].writeObject(tempFile.toFile());
 		        System.out.println("CHUNK SENT SUCCESSFULLY");
 		        
 		        // Signal end of chunk
-		        objectOutputStream.writeObject("END_OF_CHUNK");
+		        outWriters[writerIndex].writeObject("END_OF_CHUNK");
+		        System.out.println("END OF CHUNK SIGNALED");
 
 		    } catch (IOException e) {
 		        System.out.println("Error sending/receiving chunks to/from the client");
 		        e.printStackTrace();
 		    }
 		}
+    	
+    	System.out.println("FINISHED SENDING CHUNKS");
     }
 }
