@@ -39,23 +39,22 @@ public class NewClientHandler implements Runnable {
         	int totalWords = 0;
             List<String> fileLines = calculateFileLines(filename);
 
-            PrintWriter[] outWriters = new PrintWriter[numClients];
             ObjectInputStream[] inReaders = new ObjectInputStream[numClients];
             
             for(int i=0;i<sockets.size();i++){
-                outWriters[i] = new PrintWriter(sockets.get(i).getOutputStream(), true);
-
                 distributeChunks(fileLines);
                 
                 end = System.currentTimeMillis();
                 System.out.println("Time Taken: " + (end - start) + " ms");
                 
                 inReaders[i] = new ObjectInputStream(sockets.get(i).getInputStream());
-
+                System.out.println("READERS INITIALIZED");
             }
             
+            System.out.println("ATTEMPTING TO READ WORDS");
+            
             for(int i=0;i<sockets.size();i++){
-                int words = inReaders[i].readInt();
+                int words = inReaders[i].read();
                 System.out.println("WORDS PARSED");
                 totalWords+=words;
                 System.out.println("Client " + i + ": " + words);
@@ -66,6 +65,7 @@ public class NewClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Exception caught when handling client");
             System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -99,8 +99,7 @@ public class NewClientHandler implements Runnable {
         int chunkSize = fileLines.size() / numClients;
     	
     	for (Socket clientSocket : sockets) {
-		    try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-		         ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream())) {
+		    try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream())) {
 
 		        // Send a chunk of lines as a file to the client
 		        int startIndex = sockets.indexOf(clientSocket) * chunkSize;
@@ -120,7 +119,7 @@ public class NewClientHandler implements Runnable {
 		        System.out.println("CHUNK SENT SUCCESSFULLY");
 		        
 		        // Signal end of chunk
-		        out.println("END_OF_CHUNK");
+		        objectOutputStream.writeObject("END_OF_CHUNK");
 
 		    } catch (IOException e) {
 		        System.out.println("Error sending/receiving chunks to/from the client");

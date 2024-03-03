@@ -10,7 +10,6 @@ import java.util.List;
 public class NewServer {
     public static void main(String[] args) throws IOException {
         int portNumber = 1111;
-        int numClients;
 
         try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
             System.out.println("Server created");

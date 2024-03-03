@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class NewClient {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		String hostName = "192.168.0.34"; // Replace with the server's IP address or hostname
+		String hostName = "192.168.0.35"; // Replace with the server's IP address or hostname
 		int portNumber = 1111;
 
 		try 
@@ -19,7 +19,8 @@ public class NewClient {
 			int wordCount = 0;
 
 			while ((chunk = objectInputStream.readObject()) != null) {
-				if (chunk instanceof Boolean) {
+				if (chunk instanceof String && chunk.equals("END_OF_CHUNK")) {
+					System.out.println("END OF CHUNK DETECTED");
 					// End of chunks, break the loop
 					break;
 				}
@@ -32,15 +33,17 @@ public class NewClient {
 					wordCount = wordCount(tempFile);
 					System.out.println("Word count of file chunk: " + wordCount);
 				}
+			}
 
-				if(mySocket.isClosed())
-					System.out.println("At client: Socket is closed");
-				else {
-					System.out.println("At client: Socket is open");
-				}
+			System.out.println("LOOP BROKEN SUCCESSFULLY");
+			
+			if(mySocket.isClosed())
+				System.out.println("At client: Socket is closed");
+			else {
+				System.out.println("At client: Socket is open");
 				PrintWriter outWriter = new PrintWriter(mySocket.getOutputStream());
-				outWriter.write(wordCount);
-				outWriter.flush();
+				outWriter.println(wordCount);
+				System.out.println("WORDS SENT");
 			}
 
 		} catch (IOException e) {
